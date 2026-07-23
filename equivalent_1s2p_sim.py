@@ -212,13 +212,17 @@ class SimResult:
 # ================================================================
 def simulate(c_rate: float = 0.5, initial_soc: float = 1.0, stagger_h: float = 0.25,
              cfg: EquivConfig = None, dt: float = 10.0, thermal: bool = True,
-             max_h: float = 4.0):
+             max_h: float = None):
     """运行等效 1S2P 仿真。
 
     返回 SimResult。
     """
     if cfg is None:
         cfg = EquivConfig()
+    # 自适应最大时长: 整包在 c_rate 下理论最短放电时长 = 1/c_rate 小时,
+    # 低倍率 (如 0.2C) 需要更久, 取 max(4h, 1.6/c_rate) 留足余量, 避免被截断。
+    if max_h is None:
+        max_h = max(4.0, 1.6 / c_rate)
     n_p = cfg.parallel_count
     Q = cfg.cell_capacity_ah
     I_pack = cfg.pack_current(c_rate)        # 阶段1 支路1独担 / 阶段2 整包
